@@ -34,5 +34,5 @@ Nacional University of Colombia, Medellín \| Antioquia, Colombia \| Statistics 
 
 ## Experience
 
-Add experience :factory:
+Add experience :factory::briefcase:
 :::
