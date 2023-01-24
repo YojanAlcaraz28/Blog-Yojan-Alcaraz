@@ -20,7 +20,13 @@ about:
 ---
 
 ::: {#hero-heading}
-Hi! :wave: I´m Yojan Alcaraz, a student of Statistics at the National University of Colombia.
+Hi! :wave: I´m Yojan Alcaraz.
+
+:school:I´m a student of Statistics at the National University of Colombia.
+
+:books::pushpin: I love analyzing data sets and making decisions from it.
+
+:pushpin: On this blog, I share what I learn.
 
 ## Education
 
