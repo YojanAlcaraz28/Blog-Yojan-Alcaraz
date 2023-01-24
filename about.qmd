@@ -1,0 +1,32 @@
+---
+title: "About"
+from: markdown+emoji
+image: profile_photo.jpeg
+about:
+  template: jolla
+  links:
+    - icon: twitter
+      text: Twitter
+      href: https://twitter.com/Alcaraz_Yojan12?t=0J2K_NH0tvzuMzRhlLwWqw&s=08
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/yojan-alcaraz-5a5475192
+    - icon: github
+      text: Github
+      href: https://github.com/YojanAlcaraz28
+    - icon: envelope
+      text: Email
+      href: yalcaraz@unal.edu.co
+---
+
+::: {#hero-heading}
+Hi! I´m Yojan Alcaraz, a student of Statistics at the National University of Colombia.
+
+## Education
+
+Nacional University of Colombia, Medellín \| Antioquia, Colombia \| Statistics Undergraduate \| Aug 2018 - Present
+
+## Experience
+
+Add experience
+:::

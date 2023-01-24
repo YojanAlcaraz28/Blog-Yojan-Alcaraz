@@ -1,0 +1,289 @@
+---
+title: "First document"
+author: "Yojan Alcaraz"
+date: "2023-01-20"
+image: "model_4.jpg"
+categories: [News, Academic]
+format: html
+code-fold: true
+code-link: true
+code-tools: true
+latex_engine: xelatex
+toc: true
+toc-location: left
+editor: visual
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA, fig.align = 'center')
+```
+
+# Taller 14 Parte 4 - Modelos Jerárquicos.
+
+## Librerías a usar.
+
+```{r}
+#| echo: true
+#| warning: false
+#| message: false
+library(boot)
+library(ggplot2)
+library(lme4)
+library(magrittr)
+library(rmarkdown)
+library (foreign)
+library(HSAUR2)
+library(dplyr)
+```
+
+Este documento contiene el desarrollo a un taller académico de la asignatura Modelos Jerárquicos.
+
+## Preguntas
+
+La base de datos *toenail* del paquete **HSAUR2** contiene los resultados de un ensayo clínico para comparar dos tratamientos para combatir una infección en los dedos de los pies (dermatophyte onychomycosis).
+
+```{r}
+#| echo: true
+data("toenail")
+```
+
+### Breve descripción de las variables.
+
+La base de datos contiene las siguientes variables:
+
+-   patientID: Identificador único para cada paciente en el tratamiento.
+-   outcome: Grado de separación de la placa ungeal del lecho ungeal.
+-   treatment: Factor con dos niveles: itraconazole y terbinafine.
+-   time: Momento del mes en que se produjo la visita.
+-   visit: Número de visitas atendidas.
+
+### Pacientes que asistieron a un solo control
+
+Los pacientes que asistieron solo una vez al control son los siguientes:
+
+```{r}
+sumvisits <- aggregate(visit~patientID, data = toenail, sum)
+unavez <- sumvisits[sumvisits$visit == 1,]
+unavez
+```
+
+Así, los pacientes con identificador 45, 48, 63, 99 y 377 asistieron una única vez al control.
+
+### Mayor número de visitas de un paciente
+
+```{r}
+max(sumvisits$visit)
+```
+
+El mayor número de visitas de un paciente es 28.
+
+### Cantidad de pacientes por tratamiento
+
+La cantidad de pacientes por tratamiento es la siguiente:
+
+```{r}
+canti_treatment <-aggregate(visit~patientID+treatment, data = toenail, sum)
+table(canti_treatment$treatment)
+```
+
+De los 294 pacientes, 146 pacientes fueron tratados con itraconazole y 148 fueron tratados con terbinafine.
+
+### Gráfico
+
+El gráfico de la evolución del estado de la enfermedad $Y$ en función del tiempo para los pacientes 1, 3, 21 y 383 es el siguiente:
+
+```{r}
+#| fig.height: 4
+#| fig-align: "center"
+grafico <- toenail[toenail$patientID %in% c(1,3,21,383),]
+grafico$outcome <- ifelse(grafico$outcome == "none or mild",1,0)
+ggplot(data = grafico, aes(x = time, y = outcome, color = treatment)) +
+  geom_point() + theme_bw() + facet_wrap(~ patientID) + 
+  labs(y = "y",color = "treatment") 
+```
+
+Entre los cuatro pacientes analizados en el gráfico, el único paciente que fue tratado con itraconazole fue el paciente 3 y fue el único paciente que durante el tiempo de visitas tuvo una desmejoría respecto a la evolución del estado de la enfermedad, los otros tres pacientes tratados con terbinafine mejoraron luego de determinados días de visita: el paciente 1 mejoró en la cuarta visita, el paciente 21 mejoró en la tercer visita y el paciente 383 tuvo una mejoría en la visita 5.
+
+### Ajuste *mod1*
+
+Con la siguiente línea de código se ajusta el modelo con la estructura
+
+```{=tex}
+\begin{align*} 
+y_{ij} &\sim  Bernoulli(p_{ij}) \\ 
+\text{logit}(p_{ij}) &= \beta_0 + \beta_1 \, time_{ij} + \beta_2 \, treatment_{itraconazolei} + b_{0i} \\
+b_0 &\sim N(0, \sigma^2_{b0}),
+\end{align*}
+```
+donde $i$ corresponde al paciente y $j$ a la visita.
+
+```{r}
+toenail$outcome <- ifelse(toenail$outcome == "none or mild",1,0)
+# Cambiar tratamiento de referencia:
+toenail$treatment <- relevel(toenail$treatment, ref = 2)
+mod1 <- glmer(outcome ~ 1 + time + treatment + (1 | patientID), 
+              data = toenail, family = binomial(link = "logit"), nAGQ = 1)
+```
+
+El siguiente es el resumen del modelo 1:
+
+```{r}
+summary(mod1)
+```
+
+### Ajuste *mod2*
+
+El ajuste del modelo con estructura
+
+```{=tex}
+\begin{align*} 
+y_{ij} &\sim  Bernoulli(p_{ij}) \\ 
+\text{logit}(p_{ij}) &= \beta_0 + \beta_1 \, time_{ij} + \beta_2 \, treatment_{itraconazolei} + \beta_3 \, time_{ij} \, treatment_{itraconazolei} + b_{0i} \\
+b_0 &\sim N(0, \sigma^2_{b0}),
+\end{align*}
+```
+está dado por las siguientes líneas de código:
+
+```{r}
+mod2 <- glmer(outcome ~ 1 + time * treatment + (1 | patientID), 
+              data = toenail,family = binomial(link = "logit"), nAGQ = 1)
+```
+
+Y el resumen del modelo 2 se muestra a continuación:
+
+```{r}
+summary(mod2)
+```
+
+### Ajuste *mod3*
+
+El modelo dado por *mod3* se ajusta con las siguientes líneas de código:
+
+```{=tex}
+\begin{align*} 
+y_{ij} &\sim  Bernoulli(p_{ij}) \\ 
+\text{logit}(p_{ij}) &= \beta_0 + \beta_1 \, time_{ij} + \beta_2 \, treatment_{itraconazolei} + \beta_3 \, time_{ij} \, treatment_{itraconazolei} + b_{0i} + b_{1i} \,time_{ij} \\
+\left (
+\begin{matrix}
+b_{0} \\ b_{1}
+\end{matrix} 
+\right ) &\sim 
+N\left ( \left ( \begin{matrix}
+0 \\ 0
+\end{matrix} \right ),
+\left ( \begin{matrix}
+\sigma^2_{b0} & \sigma_{b01} \\ 
+\sigma_{b01} & \sigma^2_{b1}
+\end{matrix} \right )
+\right ) \\
+\end{align*}
+```
+```{r}
+mod3 <- glmer(outcome ~ 1 + time * treatment + (1 + time| patientID), 
+              data = toenail,family = binomial(link = "logit"), nAGQ = 1)
+```
+
+Se muestra el resumen del modelo 3 a continuación:
+
+```{r}
+summary(mod3)
+```
+
+### Pruena de razón de verosimilitud
+
+La función *anova()* permite comparar los tres modelos propuestos anteriormente:
+
+```{r}
+anova(mod1,mod2,mod3)
+```
+
+Dada esta salida, el modelo *mod3* es el mejor entre los modelos propuestos.
+
+### Función *predict.merMod*
+
+La función *predict.merMod* permite realizar predicciones con modelos de efectos mixtos, una de sus argumentos es *type*, este permite indicar el tipo de predicción que se quiere obtener, si es en términos de la función de linkeo o en términos de la respuesta.
+
+### Modelo ajustado
+
+Entre los modelos propuestos, el mejor modelo (*mod3*) ajustado está dado por:
+
+```{=tex}
+\begin{align*}
+\widehat{Pr}(outcome_{ij} &= none \, or \, mild = 1) \\ 
+&= logit^{-1}(9.35034 + 0.75546 \, time_{ij} + 0.02474 \, treatment_{itraconazolei} - \\
+& 0.45704 \, time_{ij} \, treatment_{itraconazolei} + \tilde{b}_{0i} + \tilde{b}_{1i} \,time_{ij}) \\
+\left (
+\begin{matrix}
+b_{0} \\ b_{1}
+\end{matrix} 
+\right ) &\sim 
+N\left ( \left ( \begin{matrix}
+0 \\ 0
+\end{matrix} \right ),
+\left ( \begin{matrix}
+549 & 7030.7136 \\ 
+7030.7136 & 14.72
+\end{matrix} \right )
+\right ) \\
+\end{align*}
+```
+### Modelo ajustado para el paciente 1
+
+El modelo ajustado para el paciente 1 se muestra a continuación; las siguientes líneas de código permiten obtener los coeficientes de dicho modelo:
+
+```{r}
+coeficientes <- coef(mod3)
+coeficientes$patientID[1,]
+```
+
+```{=tex}
+\begin{align*}
+\widehat{Pr}(outcome_{1j} &= none \, or \, mild = 1) \\ 
+&= logit^{-1}(-15.2814 + 3.8556 \, time_{1j} + 0.02474 \, treatment_{itraconazole_1} - \\
+& 0.45704 \, time_{1j} \, treatment_{itraconazole_1})
+\end{align*}
+```
+### Gráfico con curva ajustada
+
+A continuación se muestra el mismo gráfico construido en la sección 1.5, pero esta vez con la curva ajustada por cada uno de los modelos propuestos anteriormente: *mod1*, *mod2* y *mod3*.
+
+-   Gráfico para modelo 1:
+
+```{r, fig.height=5}
+toenail$predict1 <- predict(mod1, type = "response")
+grafico1 <- toenail[toenail$patientID %in% c(1,3,21,383),]
+ggplot(data = grafico1, aes(x = time, y = predict1, color = treatment)) +
+  geom_line()+
+  geom_point(aes(x = time, y = outcome, color = treatment)) +
+  theme_bw() +
+  facet_wrap(~ patientID) + 
+  labs(y = "y",color = "treatment") 
+```
+
+-   Gráfico para modelo 2:
+
+```{r,fig.height=5}
+toenail$predict2 <- predict(mod2, type = "response")
+grafico2 <- toenail[toenail$patientID %in% c(1,3,21,383),]
+ggplot(data = grafico2, aes(x = time, y = predict2, color = treatment)) +
+  geom_line()+
+  geom_point(aes(x = time, y = outcome, color = treatment)) +
+  theme_bw() +
+  facet_wrap(~ patientID) + 
+  labs(y = "y",color = "treatment") 
+```
+
+-   Gráfico para modelo 3:
+
+```{r,fig.height=5}
+toenail$predict3 <- predict(mod3, type = "response")
+grafico2 <- toenail[toenail$patientID %in% c(1,3,21,383),]
+ggplot(data = grafico2, aes(x = time, y = predict3, color = treatment)) +
+  geom_line()+
+  geom_point(aes(x = time, y = outcome, color = treatment)) +
+  theme_bw() +
+  facet_wrap(~ patientID) + 
+  labs(y = "y",color = "treatment") 
+```
+
+La figura presentada en el enunciado corresponde al modelo 3: *mod3*.
