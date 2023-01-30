@@ -15,10 +15,12 @@ website:
         href: https://twitter.com/Alcaraz_Yojan12?t=0J2K_NH0tvzuMzRhlLwWqw&s=08
       - icon: linkedin
         href: https://www.linkedin.com/in/yojan-alcaraz-5a5475192
+    #logo: Logo_Unal.png
 format:
   html:
-    theme: journal
+    theme: theme.scss
     css: styles.css
+    
 
 editor: visual
 
