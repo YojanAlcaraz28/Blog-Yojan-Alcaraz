@@ -20,3 +20,12 @@ $primary: $green_fluor !default;
 /*font*/
 
 $font-family-base: 'Lato', 'Source Seans Pro',  'Merriweather', 'Roboto Regular', 'Cabin Regular' !default;
+$body-color: $amarillo !default;
+$headings-font-family: 'Prata', 'Roboto', 'Playfair Display', 'Montserrat' !default;
+
+/*-- scss:rules--*/
+
+#title-block-header.quarto.tittle-block.default .quarto-title .title{
+  font-family: "Oleo Script", $headings-font-family;
+  font-size: $font-size-base * 3;
+}
